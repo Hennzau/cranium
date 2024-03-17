@@ -55,18 +55,14 @@ class NXPTrackVision(Node):
             'camera/image_raw/compressed', 
             self.pixyImageCallback, 
             qos_profile_sensor_data)
-        
-        self.b3rb_status = self.create_subscription(Status,'/cerebri/out/status',self.statusCallback,qos_profile_sensor_data)
 
         #Publishers
-        self.debugDetectionImagePub = self.create_publisher(sensor_msgs.msg.Image,
+        self.debugDetectionImagePub = self.create_publisher(sensor_msgs.msg.CompressedImage,
             "/debugImage", 0)
         
         self.PixyVectorPub = self.create_publisher(PixyVector,
             "cerebri/in/pixy_vector", 0)
-            
-        self.JoystickPub = self.create_publisher(sensor_msgs.msg.Joy,"/cerebri/in/joy",0)
-        
+
         #Only used for debugging line finding issues
         self.lineFindPrintDebug = False
         self.lineMethodsUsedCount = [0, 0, 0, 0, 0, 0, 0]
@@ -415,23 +411,6 @@ class NXPTrackVision(Node):
                 PixyVector_msg.m1_y1 = int(pixyScaledVectorArray[1][self.pY0])
             self.PixyVectorPub.publish(PixyVector_msg)
         return(returnedImageDebug)
-      
-    def statusCallback(self,data):
-        #Putting robot in AUTO mode 
-        if(data.mode!=2):
-            joystick_msg=sensor_msgs.msg.Joy()
-            joystick_msg.header.stamp=ROSClock().now().to_msg()
-            joystick_msg.axes=[0.0,0.0,0.0,0.0]
-            joystick_msg.buttons = [0, 1, 0, 0, 0, 0, 0, 0]
-            #self.JoystickPub.publish(joystick_msg)
-        #If robot is in AUTO mode -> arming the robot
-        elif(data.mode==2 and data.arming!=2):
-            #sleep(5.0)
-            joystick_msg=sensor_msgs.msg.Joy()
-            joystick_msg.header.stamp=ROSClock().now().to_msg()
-            joystick_msg.axes=[0.0,0.0,0.0,0.0]
-            joystick_msg.buttons = [0, 0, 0, 0, 0, 0, 0, 1]
-            #self.JoystickPub.publish(joystick_msg)
 
     def pixyImageCallback(self, data):    
         
@@ -446,7 +425,7 @@ class NXPTrackVision(Node):
         
         if self.debug:
             #publish debug image
-            msg = self.bridge.cv2_to_imgmsg(sceneDetected, "bgr8")
+            msg = self.bridge.cv2_to_compressed_imgmsg(sceneDetected, "bgr8")
             msg.header.stamp = data.header.stamp
             self.debugDetectionImagePub.publish(msg)
 
