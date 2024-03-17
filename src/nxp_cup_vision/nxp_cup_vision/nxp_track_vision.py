@@ -57,7 +57,7 @@ class NXPTrackVision(Node):
             qos_profile_sensor_data)
 
         #Publishers
-        self.debugDetectionImagePub = self.create_publisher(sensor_msgs.msg.Image,
+        self.debugDetectionImagePub = self.create_publisher(sensor_msgs.msg.CompressedImage,
             "/debugImage", 0)
         
         self.PixyVectorPub = self.create_publisher(PixyVector,
@@ -410,24 +410,12 @@ class NXPTrackVision(Node):
                 PixyVector_msg.m1_x1 = int(pixyScaledVectorArray[1][self.pX0])
                 PixyVector_msg.m1_y1 = int(pixyScaledVectorArray[1][self.pY0])
             self.PixyVectorPub.publish(PixyVector_msg)
+
         return(returnedImageDebug)
 
-    def pixyImageCallback(self, data):    
-        
-        # Scene from subscription callback
-        scene = self.bridge.compressed_imgmsg_to_cv2(data, desired_encoding='bgr8')      
-        scene = cv2.warpPerspective(scene, self.matrix, (self.imageWidth, self.imageHeight), cv2.BORDER_CONSTANT, 0)
-        
-        sceneDetect = copy.deepcopy(scene)
+    def pixyImageCallback(self, data):
 
-        #find lines function
-        sceneDetected = self.findLines(sceneDetect)
-        
-        if self.debug:
-            #publish debug image
-            msg = self.bridge.cv2_to_imgmsg(sceneDetected, "bgr8")
-            msg.header.stamp = data.header.stamp
-            self.debugDetectionImagePub.publish(msg)
+        self.debugDetectionImagePub.publish (data)
 
 def main(args=None):
     rclpy.init(args=args)
