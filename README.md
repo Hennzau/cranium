@@ -1,1 +1,1 @@
-# cranium-simulator
+# cranium
