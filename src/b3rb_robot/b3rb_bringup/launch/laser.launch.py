@@ -12,7 +12,6 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 
 from launch_ros.actions import Node
 
-
 ARGUMENTS = [
     DeclareLaunchArgument('stl27l', default_value='true',
                           choices=['true', 'false'],
@@ -24,31 +23,27 @@ ARGUMENTS = [
 
 
 def generate_launch_description():
-
     stl27l_node = Node(
         package='ldlidar_stl_ros2',
         executable='ldlidar_stl_ros2_node',
         output='screen',
         parameters=[
             {'product_name': 'LDLiDAR_STL27L'},
-            {'topic_name': 'scan'},
+            {'topic_name': 'lidar/scan'},
             {'frame_id': 'lidar_link'},
             {'port_name': '/dev/ttymxc2'},
             {'port_baudrate': 921600},
             {'laser_scan_dir': True},
-            {'enable_angle_crop_func': False},
-            {'enable_box_crop_func': True},
-            {'angle_crop_min': 175.0},
-            {'angle_crop_max': 210.0},
-            {'x_crop_min': -0.3},
-            {'x_crop_max': -0.1},
-            {'y_crop_min': -0.03},
-            {'y_crop_max': 0.15},
+            {'enable_box_crop_func': False},
+            {'enable_angle_crop_func': True},
+            {'angle_crop_min': 130.0},
+            {'angle_crop_max': 230.0},
             {'bins': 360},
             {'range_min': 0.03},
             {'range_max': 5.0},
             {'pub_rate': 10.0}
-            ],
+        ],
+
         condition=IfCondition(LaunchConfiguration("stl27l"))
     )
 
@@ -56,4 +51,3 @@ def generate_launch_description():
     ld = LaunchDescription(ARGUMENTS)
     ld.add_action(stl27l_node)
     return ld
-
