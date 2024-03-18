@@ -75,7 +75,7 @@ def generate_launch_description():
 
     laser = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([PathJoinSubstitution(
-            [get_package_share_directory('b3rb_bringup'), 'launch', 'laser.launch.py'])]),
+            [get_package_share_directory('ldlidar_stl_ros2'), 'launch', 'laser.launch.py'])]),
         condition=IfCondition(LaunchConfiguration('laser')),
         launch_arguments=[
             ('stl27l', 'true'),

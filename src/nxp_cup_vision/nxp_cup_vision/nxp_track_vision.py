@@ -416,7 +416,6 @@ class NXPTrackVision(Node):
 
         # Scene from subscription callback
         scene = self.bridge.compressed_imgmsg_to_cv2(data, desired_encoding='bgr8')
-        scene = cv2.warpPerspective(scene, self.matrix, (self.imageWidth, self.imageHeight), cv2.BORDER_CONSTANT, 0)
 
         sceneDetect = copy.deepcopy(scene)
 
