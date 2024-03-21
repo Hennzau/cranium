@@ -60,18 +60,6 @@ class NXPTrackVision(Node):
 
         binary_image = binary_image[y_start:y_end, :]
 
-        for y in range(height):
-            count = 0
-
-            for x in range(width):
-                if binary_image[y, x] == 0:
-                    count += 1
-                else:
-                    if count > 25:
-                        for i in range(count + 1):
-                            binary_image[y, x - i] = 255
-                    count = 0
-
         # Scene from subscription callback
         msg = self.bridge.cv2_to_compressed_imgmsg(binary_image)
         self.debugDetectionImagePub.publish(msg)
