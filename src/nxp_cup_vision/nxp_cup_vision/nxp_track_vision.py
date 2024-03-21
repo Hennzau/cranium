@@ -48,8 +48,33 @@ class NXPTrackVision(Node):
                                                             "/debugImage", 0)
 
     def camera_image_callback(self, data):
+        scene = self.bridge.compressed_imgmsg_to_cv2(data, desired_encoding='bgr8')
+
+        binary_image = cv2.inRange(scene, (100, 100, 100), (255, 255, 255))
+
+        height, width = binary_image.shape
+
+        # y_debut = height * 2 // 5
+        y_start = 0
+        y_end = height
+
+        binary_image = binary_image[y_start:y_end, :]
+
+        for y in range(height):
+            count = 0
+
+            for x in range(width):
+                if binary_image[y, x] == 0:
+                    count += 1
+                else:
+                    if count > 25:
+                        for i in range(count + 1):
+                            binary_image[y, x - i] = 255
+                    count = 0
+
         # Scene from subscription callback
-        self.debugDetectionImagePub.publish(data)
+        msg = cv2.cv2_to_compressed_imgmsg(binary_image)
+        self.debugDetectionImagePub.publish(msg)
 
 
 def main(args=None):
