@@ -73,7 +73,7 @@ class NXPTrackVision(Node):
                     count = 0
 
         # Scene from subscription callback
-        msg = cv2.cv2_to_compressed_imgmsg(binary_image)
+        msg = self.bridge.cv2_to_compressed_imgmsg(binary_image)
         self.debugDetectionImagePub.publish(msg)
 
 
