@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'nxp_cup_vision'
+package_name = 'vision'
 
 setup(
     name=package_name,
@@ -10,7 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + '/launch', ['launch/nxp_cup_vision_launch.py']),
+        ('share/' + package_name + '/launch', ['launch/vision.py']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -23,7 +23,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'nxp_track_vision = nxp_cup_vision.nxp_track_vision:main'
+            'track_vision = vision.track_vision:main'
         ],
     },
 )

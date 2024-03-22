@@ -25,10 +25,10 @@ if cv2.__version__ < "4.0.0":
                       "but found {:s}".format(cv2.__version__))
 
 
-class NXPTrackVision(Node):
+class TrackVision(Node):
 
     def __init__(self):
-        super().__init__("nxp_track_vision")
+        super().__init__("track_vision")
 
         # setup CvBridge
         self.bridge = CvBridge()
@@ -45,7 +45,7 @@ class NXPTrackVision(Node):
 
         # Publishers
         self.debugDetectionImagePub = self.create_publisher(sensor_msgs.msg.CompressedImage,
-                                                            "/debugImage", 0)
+                                                            "vision/image_raw/compressed", 0)
 
     def camera_image_callback(self, data):
         scene = self.bridge.compressed_imgmsg_to_cv2(data, desired_encoding='bgr8')
@@ -67,7 +67,7 @@ class NXPTrackVision(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = NXPTrackVision()
+    node = TrackVision()
     rclpy.spin(node)
     rclpy.shutdown()
 

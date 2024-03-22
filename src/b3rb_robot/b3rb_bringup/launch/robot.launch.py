@@ -43,7 +43,7 @@ ARGUMENTS = [
                           description='capabilities for foxglove'),
     DeclareLaunchArgument('topic_whitelist',
                           default_value=[
-                              '["/camera/image_raw/compressed","/cerebri/out/status", "/debugImage", "/lidar/scan","/tf"]'],
+                              '["/camera/image_raw/compressed","/cerebri/out/status", "/vision/image_raw/compressed", "/lidar/scan","/tf"]'],
                           description='topic_whitelist for foxglove'),
     DeclareLaunchArgument('service_whitelist',
                           default_value=['[""]'],
@@ -83,9 +83,9 @@ def generate_launch_description():
         ]
     )
 
-    nxp_cup_vision = IncludeLaunchDescription(
+    vision = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([PathJoinSubstitution(
-            [get_package_share_directory('nxp_cup_vision'), 'launch', 'nxp_cup_vision_launch.py'])]),
+            [get_package_share_directory('vision'), 'launch', 'vision.py'])]),
         condition=IfCondition(LaunchConfiguration('track_vision')),
     )
 
@@ -114,5 +114,5 @@ def generate_launch_description():
         foxglove_websockets,
         laser,
         cam,
-        nxp_cup_vision,
+        vision,
     ])
