@@ -25,44 +25,120 @@ if cv2.__version__ < "4.0.0":
                       "but found {:s}".format(cv2.__version__))
 
 
+def to_black_and_white(bgr_image):
+    gray = cv2.bitwise_not(cv2.cvtColor(bgr_image, cv2.COLOR_BGR2GRAY))
+    (_, black_and_white) = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+
+    return black_and_white
+
+
+def extract_lines_x_axis(warped_black_and_white):
+    histogram = np.sum(warped_black_and_white[int(warped_black_and_white.shape[0] / 2):, :], axis=0)
+
+    midpoint = int(histogram.shape[0] / 2)
+
+    return np.argmax(histogram[:midpoint]), np.argmax(histogram[midpoint:]) + midpoint
+
+
+def search_point(white_pixels, up, bottom, left, right):
+    white_x, white_y = white_pixels
+
+    indices = ((white_y >= up) & (white_y < bottom) & (white_x >= left) & (white_x < right)).nonzero()[0]
+
+    if len(indices) > 25:
+        current_x = int(np.mean(white_x[indices]))
+        current_y = (bottom + up) / 2
+
+        return int(current_x), int(current_y)
+
+    return None
+
+
 class TrackVision(Node):
 
     def __init__(self):
         super().__init__("track_vision")
 
-        # setup CvBridge
         self.bridge = CvBridge()
 
-        # Camera image size parameters
         self.imageHeight = 240
         self.imageWidth = 320
 
         # Subscribers
-        self.imageSub = self.create_subscription(sensor_msgs.msg.CompressedImage,
-                                                 'camera/image_raw/compressed',
-                                                 self.camera_image_callback,
-                                                 qos_profile_sensor_data)
+        _ = self.create_subscription(sensor_msgs.msg.CompressedImage,
+                                     'camera/image_raw/compressed',
+                                     self.camera_image_callback,
+                                     qos_profile_sensor_data)
 
         # Publishers
-        self.debugDetectionImagePub = self.create_publisher(sensor_msgs.msg.CompressedImage,
-                                                            "vision/image_raw/compressed", 0)
+        self.vision = self.create_publisher(sensor_msgs.msg.CompressedImage,
+                                            "vision/image_raw/compressed", 0)
+
+        self.roi = np.float32([
+            (70, 108),  # Top-left corner
+            (0, 183),  # Bottom-left corner
+            (320, 183),  # Bottom-right corner
+            (238, 108)  # Top-right corner
+        ])
+
+        self.search_height = 15
+        self.search_width = 25 * 2
+
+    def warped_image(self, image):
+        desired_roi_points = np.float32([
+            [0, 0],
+            [0, self.imageHeight],
+            [self.imageWidth, self.imageHeight],
+            [self.imageWidth, 0]
+        ])
+
+        return cv2.warpPerspective(image,
+                                   cv2.getPerspectiveTransform(self.roi, desired_roi_points),
+                                   (self.imageWidth, self.imageHeight),
+                                   flags=cv2.INTER_LINEAR)
+
+    def extract_points(self, warped_black_and_white):
+        white_pixels = warped_black_and_white.nonzero()
+        white_pixels = np.array(white_pixels[1]), np.array(white_pixels[0])
+
+        left, right = extract_lines_x_axis(warped_black_and_white)
+
+        left_points = []
+        right_points = []
+
+        for search in range(0, int(self.imageHeight / self.search_height)):
+            up = self.imageHeight - (search + 1) * self.search_height
+            bottom = self.imageHeight - search * self.search_height
+
+            left_left = left - (self.search_width / 2)
+            left_right = left + (self.search_width / 2)
+
+            right_left = right - (self.search_width / 2)
+            right_right = right + (self.search_width / 2)
+
+            left_point, right_point = (search_point(white_pixels, up, bottom,
+                                                    left_left, left_right),
+                                       search_point(white_pixels, up, bottom,
+                                                    right_left, right_right))
+
+            if left_point is not None:
+                left = left_point[0]
+                left_points.append(left_point)
+
+            if right_point is not None:
+                right = right_point[0]
+                right_points.append(right_point)
+
+        return left_points, right_points
 
     def camera_image_callback(self, data):
         scene = self.bridge.compressed_imgmsg_to_cv2(data, desired_encoding='bgr8')
 
-        binary_image = cv2.inRange(scene, (100, 100, 100), (255, 255, 255))
+        warped_black_and_white = self.warped_image(to_black_and_white(scene.clone()))
 
-        height, width = binary_image.shape
+        left_x, right_x = extract_lines_x_axis(warped_black_and_white)
 
-        # y_debut = height * 2 // 5
-        y_start = 0
-        y_end = height
-
-        binary_image = binary_image[y_start:y_end, :]
-
-        # Scene from subscription callback
-        msg = self.bridge.cv2_to_compressed_imgmsg(binary_image)
-        self.debugDetectionImagePub.publish(msg)
+        self.vision.publish(self.bridge.cv2_to_compressed_imgmsg(binary_image))
 
 
 def main(args=None):
