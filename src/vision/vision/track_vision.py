@@ -134,11 +134,19 @@ class TrackVision(Node):
     def camera_image_callback(self, data):
         scene = self.bridge.compressed_imgmsg_to_cv2(data, desired_encoding='bgr8')
 
-        warped_black_and_white = self.warped_image(to_black_and_white(scene.clone()))
+        warped_black_and_white = self.warped_image(to_black_and_white(scene))
 
-        left_x, right_x = extract_lines_x_axis(warped_black_and_white)
+        left_points, right_points = self.extract_points(warped_black_and_white)
 
-        self.vision.publish(self.bridge.cv2_to_compressed_imgmsg(binary_image))
+        warped = cv2.cvtColor(warped_black_and_white, cv2.COLOR_BGR2RGB)
+
+        for left_point in left_points:
+            cv2.circle(warped, (left_point[0], left_point[1]), 3, (255, 0, 0), -1)
+
+        for right_point in right_points:
+            cv2.circle(warped, (right_point[0], right_point[1]), 3, (255, 0, 0), -1)
+
+        self.vision.publish(self.bridge.cv2_to_compressed_imgmsg(warped))
 
 
 def main(args=None):
