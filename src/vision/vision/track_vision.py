@@ -54,6 +54,54 @@ def search_point(white_pixels, up, bottom, left, right):
     return None
 
 
+def calculate_command_dir_vector(left_points, right_points):
+    total_theta = 0
+    thetas = []
+    total_phi = 0
+    phis = []
+
+    left_total_length = 0
+    left_lengths = []
+
+    right_total_length = 0
+    right_lengths = []
+
+    for k in range(0, len(left_points) - 1):
+        theta = np.arctan((left_points[k][0] - left_points[k + 1][0]) / (left_points[k][1] - left_points[k + 1][1]))
+
+        thetas.append(theta)
+
+        length = (((left_points[k][1] - left_points[k + 1][1]) ** 2) + (
+                (left_points[k][0] - left_points[k + 1][0]) ** 2)) ** 0.5
+
+        left_lengths.append(length)
+
+        left_total_length += length
+        total_theta += length * theta
+
+    total_theta = total_theta / left_total_length
+
+    for k in range(0, len(right_points) - 1):
+        phi = np.arctan(
+            (right_points[k + 1][0] - right_points[k][0]) / (right_points[k + 1][1] - right_points[k][1]))
+
+        phis.append(phi)
+
+        length = (((right_points[k][1] - right_points[k + 1][1]) ** 2) + (
+                (right_points[k][0] - right_points[k + 1][0]) ** 2)) ** 0.5
+
+        right_lengths.append(length)
+
+        right_total_length += length
+        total_phi += length * phi
+
+    total_phi = total_phi / right_total_length
+
+    alpha = (len(thetas) * total_theta + len(phis) * total_phi) / (len(thetas) + len(phis))
+
+    return np.array([np.sin(alpha), np.cos(alpha)])
+
+
 class TrackVision(Node):
 
     def __init__(self):
