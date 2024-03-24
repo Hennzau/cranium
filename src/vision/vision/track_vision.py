@@ -194,6 +194,12 @@ class TrackVision(Node):
         for right_point in right_points:
             cv2.circle(warped, (right_point[0], right_point[1]), 3, (255, 0, 0), -1)
 
+        command_dir = 50 * calculate_command_dir_vector(left_points, right_points)
+
+        cv2.line(warped, (self.imageWidth / 2, self.imageHeight),
+                 (self.imageWidth / 2 - int(command_dir[0]), int(self.imageHeight - command_dir[1])), (0, 0, 255), 10,
+                 -1)
+
         self.vision.publish(self.bridge.cv2_to_compressed_imgmsg(warped))
 
 
