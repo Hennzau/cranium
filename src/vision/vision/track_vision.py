@@ -15,7 +15,7 @@ from rcl_interfaces.msg import Parameter
 from rcl_interfaces.msg import ParameterType
 from rcl_interfaces.msg import ParameterDescriptor
 import sensor_msgs.msg
-from synapse_msgs.msg import Status
+from synapse_msgs.msg import RoadCurveAngle
 from cv_bridge import CvBridge
 from rclpy.qos import QoSProfile
 import cv2
@@ -54,7 +54,7 @@ def search_point(white_pixels, up, bottom, left, right):
     return None
 
 
-def calculate_command_dir_vector(left_points, right_points):
+def calculate_road_curve_angle(left_points, right_points):
     total_theta = 0
     thetas = []
     total_phi = 0
@@ -97,9 +97,7 @@ def calculate_command_dir_vector(left_points, right_points):
 
     total_phi = total_phi / right_total_length
 
-    alpha = (len(thetas) * total_theta + len(phis) * total_phi) / (len(thetas) + len(phis))
-
-    return np.array([np.sin(alpha), np.cos(alpha)])
+    return (len(thetas) * total_theta + len(phis) * total_phi) / (len(thetas) + len(phis))
 
 
 class TrackVision(Node):
@@ -121,6 +119,8 @@ class TrackVision(Node):
         # Publishers
         self.vision = self.create_publisher(sensor_msgs.msg.CompressedImage,
                                             "vision/image_raw/compressed", 0)
+
+        self.road_curve_angle = self.create_publisher(RoadCurveAngle, "cerebri/in/road_curve_angle", 0)
 
         self.roi = np.float32([
             (70, 108),  # Top-left corner
@@ -194,7 +194,16 @@ class TrackVision(Node):
         for right_point in right_points:
             cv2.circle(warped, (right_point[0], right_point[1]), 3, (255, 0, 0), -1)
 
-        command_dir = 50 * calculate_command_dir_vector(left_points, right_points)
+        angle = calculate_road_curve_angle(left_points, right_points)
+
+        road_curve_angle_msg = RoadCurveAngle()
+        now = ROSClock().now()
+        road_curve_angle_msg.header.stamp = now.to_msg()
+        road_curve_angle_msg.angle = angle
+
+        self.road_curve_angle.publish(road_curve_angle_msg)
+
+        command_dir = 50 * np.array([np.sin(angle), np.cos(angle)])
 
         cv2.line(warped, (self.imageWidth / 2, self.imageHeight),
                  (self.imageWidth / 2 - int(command_dir[0]), int(self.imageHeight - command_dir[1])), (0, 0, 255), 10,
