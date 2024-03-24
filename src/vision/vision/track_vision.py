@@ -97,7 +97,9 @@ def calculate_road_curve_angle(left_points, right_points):
 
     total_phi = total_phi / right_total_length
 
-    return (len(thetas) * total_theta + len(phis) * total_phi) / (len(thetas) + len(phis))
+    alpha = (len(thetas) * total_theta + len(phis) * total_phi) / (len(thetas) + len(phis))
+
+    return alpha
 
 
 class TrackVision(Node):
@@ -202,13 +204,6 @@ class TrackVision(Node):
         road_curve_angle_msg.angle = angle
 
         self.road_curve_angle.publish(road_curve_angle_msg)
-
-        command_dir = 50 * np.array([np.sin(angle), np.cos(angle)])
-
-        cv2.line(warped, (self.imageWidth / 2, self.imageHeight),
-                 (self.imageWidth / 2 - int(command_dir[0]), int(self.imageHeight - command_dir[1])), (0, 0, 255), 10,
-                 -1)
-
         self.vision.publish(self.bridge.cv2_to_compressed_imgmsg(warped))
 
 
